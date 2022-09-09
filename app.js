@@ -1,59 +1,75 @@
-var readline = require('readline-sync');
+const express = require('express');
+const api = express();
 
-function receberNumero() {
-    console.log('Bem Vindo! \n');
+// Primeiro metodo. Teste
+// Na arrow function, sempre que for enviar informacoes tem que ser preenchido o req e o res
+// req = requisicao que estamos recebendo do usuario
+// res = (response) = resposta que vamos retornar para o usuario
 
-    do {
-        var numero = Number(readline.question('Entre com um numero e descubra seus divisores: '));
+api.get('/teste', (req, res) => {
+    return res.status(200).send('Nossa API esta funcionando!');
+});
 
-        if (isNaN(numero)) {
-            console.log('O valor informado nao e valido! Tente novamente. \n');
-        }
+// funcao para calcular o IMC
+fCalcularImc = (peso, altura) => {
+    return peso / (altura * altura)
+};
 
-    } while (isNaN(numero));
-    return numero;
-}
-
-function descobrirDivisores(valor) {
-    let count = 0;
-
-    for(let i = 1; i <= valor; i++) {
-        if (valor % i == 0) {
-            count++;
-            console.log(`Os divisores de ${valor} sao: ${i}`);
-        }
+//funcao para verificar a classificacao
+fClassificacao = (imc) => {
+    if (imc < 18.5) {
+        return 'Voce esta abaixo do peso'
+    } else if (imc < 24.9) {
+        return 'Voce esta com peso dentro do parametro considerado normal'
+    } else {
+        return 'Voce está com sobrepeso'
     }
-    if (count == 2) {
-        console.log('Este numero e primo, ele so pode ser divido por 1 e por ele mesmo!');
+};
+
+//Array para armazenar o historico de calculos
+let historico = [];
+
+// GET para calcular o valor de IMC
+// Esse metodo precisa receber os parametros de Nome, Altura e Peso.
+api.get('/calcularIMC', (req, res) => {
+    let nomeUsuario = String(req.query.nome);
+    let pesoUsuario = Number(req.query.peso);
+    let alturaUsuario = Number(req.query.altura);
+
+    if (isNaN(pesoUsuario) || isNaN(alturaUsuario)) {
+        return res.status(400).send('Valor informado é diferente de número');
     }
-}
 
-function descobrirDivisores2(valor) {
-    let divisores = [];
+    let imcUsuario = fCalcularImc(pesoUsuario, alturaUsuario);
+    let classificacaoUsuario = fClassificacao(imcUsuario);
 
-    for(let i = 1; i <= valor; i++) {
-        if (valor % i == 0) {
-            divisores.push(i);
-        }
+    historico.push({ 
+        nome: nomeUsuario, 
+        peso: pesoUsuario, 
+        altura: alturaUsuario, 
+        imc: imcUsuario, 
+        classificacao: classificacaoUsuario,
+    });
+    return res.json({
+        nome: nomeUsuario, 
+        peso: pesoUsuario, 
+        altura: alturaUsuario, 
+        imc: imcUsuario, 
+        classificacao: classificacaoUsuario
+    });
+});
+
+// Consulta histórico
+api.post('/consultaHistorico', (req, res) => {
+    if(historico.length= 0){
+        return res.send('O histórico está vazio!');
     }
-    console.log(`Os divisores de ${valor} sao: ${divisores}`);
 
-    if (divisores.length == 2) {
-        console.log('Este numero e primo, ele so pode ser divido por 1 e por ele mesmo!');
-    }
-}
+    let json = JSON.stringify(historico);
+    res.send(json);
+});
 
-function rodarAplicativo() {
-    do {
-        let valor = receberNumero();
-        descobrirDivisores2(valor);
-
-        var continuar = String(readline.question('\n Voce deseja verificar outro numero? Responsa S para sim ou N para nao: '));
-
-    } while (continuar == 'S');
-    console.log('\n Obrigado! Ate logo.');
-}
-
-rodarAplicativo();
-
-
+// Funcao para iniciar API
+api.listen(5000, () => {
+    console.log('A API esta funcionando...');
+});
